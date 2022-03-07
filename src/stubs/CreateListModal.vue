@@ -16,48 +16,93 @@
       @ok="handleSubmit"
       @cancel="handleCancel"
     >
-      <a-form layout="vertical">
-        <a-form-item label="Title">
-          <a-input />
-        </a-form-item>
-        <a-form-item label="Description">
-          <a-input />
-        </a-form-item>
-        <a-form-item class="collection-create-form_last-form-item">
-          <a-radio-group
-            v-decorator="[
-              'modifier',
-              {
-                initialValue: 'private',
-              },
-            ]"
-          >
-            <a-radio value="public">Public</a-radio>
-            <a-radio value="private">Private</a-radio>
-          </a-radio-group>
-        </a-form-item>
-      </a-form>
+      <a-form-model
+        ref="createForm"
+        :rules="rules"
+        :model="list"
+        layout="vertical"
+      >
+        <a-form-model-item ref="name" label="Title" prop="name">
+          <a-input
+            v-model="list.name"
+            type="text"
+            @blur="
+              () => {
+                $refs.name.onFieldBlur();
+              }
+            "
+          />
+        </a-form-model-item>
+        <a-form-model-item label="Description" prop="description">
+          <a-input v-model="list.description" type="text" />
+        </a-form-model-item>
+      </a-form-model>
     </a-modal>
   </div>
 </template>
 
 <script>
+import { mapActions } from 'vuex';
+
 export default {
   data() {
     return {
-      ModalText: "Content of the modal",
+      ModalText: 'Content of the modal',
       isModalVisible: false,
+      account_id: '',
+      list: {
+        name: '',
+        description: '',
+      },
+      rules: {
+        name: [
+          {
+            required: true,
+            max: 255,
+            pattern: /^[a-zA-Z0-9 ]+$/,
+            message: 'Should be a combination of nummbers & alphabets',
+            trigger: 'blur',
+          },
+        ],
+        description: [
+          {
+            required: true,
+            max: 1000,
+            trigger: 'blur',
+          },
+        ],
+      },
     };
   },
+
   methods: {
+    ...mapActions(['createList', 'fetchLists']),
+
     onOpenModal() {
       this.isModalVisible = true;
     },
     handleSubmit() {
-      //TODO:
+      this.$refs.createForm.validate((valid) => {
+        if (valid) {
+          console.info('success');
+          this.createList(this.list).then((result) => {
+            this.$notification['success']({
+              message: 'Create List',
+              description: 'The list was created successfully',
+            });
+            this.isModalVisible = false;
+            this.fetchLists();
+          });
+        } else {
+          this.$notification['error']({
+            message: 'Create List',
+            description: 'Oops something went wrong!',
+          });
+        }
+      });
     },
     handleCancel() {
-      //TODO:
+      this.isModalVisible = false;
     },
   },
 };
